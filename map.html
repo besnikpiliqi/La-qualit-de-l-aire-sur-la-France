@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+	
+	<title>La qualité de l'aire sur la France - Avec Leaflet</title>
+
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js" integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og==" crossorigin=""></script>
+	<script src="region.js" type="text/javascript"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js" type="text/javascript"></script>
+	<style>
+		html, body {
+			height: 100%;
+			margin: 0;
+		}
+		
+		.cls-img-polu{background-image: url('img/polu-6.png');background-size: contain;background-repeat: no-repeat;}
+		.leaflet-marker-icon{border-radius: 5px;}
+		.leaflet-marker-icon span{border-radius: 5px;border: none;box-shadow: 1px 0px 5px 0px #05050585;color: white;font-weight: bold;}
+		.flex{display: flex;display: -webkit-flex;display: -moz-flex;-webkit-justify-content: center;-moz-justify-content: center;-webkit-align-items:center;-moz-align-items:center;}
+		#mapid { height: 600px; width: 500px; }
+		.info { padding: 6px 8px; font: 14px/16px Arial, Helvetica, sans-serif; background: white; background: rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(0,0,0,0.2); border-radius: 5px; } 
+		.info h4 { margin: 0 0 5px; color: #777; }
+		.legend { text-align: left; line-height: 18px; color: #555; } 
+		.legend i { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 0.7; }
+	</style>
+</head>
+<body>
+
+
+
+<div id="mapid" ></div>
+<script>
+	// id mapbox
+	// mapbox.streets
+	// mapbox.light
+	// mapbox.dark
+	// mapbox.satellite
+	// mapbox.streets-satellite
+	// mapbox.wheatpaste
+	// mapbox.streets-basic
+	// mapbox.comic
+	// mapbox.outdoors
+	// mapbox.run-bike-hike
+	// mapbox.pencil
+	// mapbox.pirates
+	// mapbox.emerald
+	// mapbox.high-contrast
+	
+
+	var mbUrl = 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}';
+	var attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>';
+	var accesstoken = 'pk.eyJ1IjoiYmVzbmlrcGlsaXFpIiwiYSI6ImNqd28xM2Q0MDAxYnM0OXA1YWNhdWowaDQifQ.nv_z6rKQHEEFx-JKN5jKFg';
+	var earthUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+	var earthAttr = 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community';
+	// layer
+	var	streets  = L.tileLayer(mbUrl, {id: 'mapbox.streets',accessToken:accesstoken, attribution: attribution});
+	var light   = L.tileLayer(mbUrl, {id: 'mapbox.light',accessToken:accesstoken, attribution: attribution});
+	var	earth  = L.tileLayer(earthUrl, { attribution: earthAttr});
+
+	var map = L.map('mapid',{
+		zoomSnap: 0.25,//the step of zooming, one click * 0.25 will zoom the map
+	}).setView([50.78951, 4.7820219],15);
+
+	streets.addTo(map);
+
+	var baseLayers = {
+		"Streets": streets,
+		"Light": light,
+		"Earth":earth,
+		// "Google":Google
+		
+	};
+	var color =  {
+		color: 'red',
+		fillColor: '#f03',
+		fillOpacity: 0.5
+	}
+	function getColor(d) {
+		return d > 300 ? '#7e0023' :
+				d > 200 ? '#660099' :
+				d > 150  ? '#cc0033' :
+				d > 100 ? '#ff9933' :
+				d > 50 ? '#ffde33' :
+				d <= 50 ? '#009966' : 'grey';
+	}
+	function getRoleText(d) {
+		return d > 300 ? 'Dangereux' :
+				d > 200 ? 'Très mauvais' :
+				d > 150  ? 'Mauvais' :
+				d > 100 ? 'Mauvais pour les groupes sensibles' :
+				d > 50 ? 'Modéré' :
+				d <= 50 ? 'Bon' : 'Non communiqué';
+	}
+	function getText(d) {
+		return d > 300 ? "Avertissements de santé de conditions d'urgence. Toute la population est plus susceptible 		d'être affecté. " :
+				d > 200 ? "Avertissements de santé de conditions d'urgence. Toute la population est plus susceptible d'être affecté. " :
+				d > 150  ? "Tout le monde peut commencer à ressentir des effets sur la santé; les membres des groupes sensibles peuvent ressentir des effets de santé plus graves." :
+				d > 100 ? "La qualité de l'air est acceptable; Cependant, pour certains polluants, il peut y avoir un problème de santé modérée pour un très petit nombre de personnes qui sont particulièrement sensibles à la pollution de l'air. " :
+				d > 50 ? "La qualité de l'air est acceptable. Cependant, pour certains polluants, il peut y avoir un risque sur la santé pour un très petit nombre de personnes inhabituellement sensibles à la pollution atmosphérique." :
+				d <= 50 ? "La qualité de l'air est jugée satisfaisante, et la pollution de l'air pose peu ou pas de risque. " : 'Non communiqué';
+	}
+	function poluIcon(val){
+		return L.divIcon({
+			html: "<span class='flex' style='width:100%;height:100%;float:left;background:"+getColor(val)+";'>"+val+"</span>",
+		    iconSize: [30, 30],
+		    popupAnchor: [0, -10]
+		});
+	}
+	
+	var geojson;
+	function highlightFeature(e) {
+		var layer = e.target;
+		layer.setStyle({
+			weight: 2,
+			color: 'blue',
+			stroke:5,
+			dashArray: '',
+			fillOpacity: 0.7,
+			fillColor:"blue"
+		});
+
+		if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+			layer.bringToFront();
+		}
+		// map.fitBounds(layer.getBounds());
+	}
+	function resetHighlight(e) {
+		geojson.resetStyle(e.target);
+	}
+	function zoomToFeature(e) {
+		map.fitBounds(e.target.getBounds());// for centerd where is clicked and zoomed this place
+
+	}
+	
+	function onEachFeature(feature, layer){
+		var popupContent = "<p class=" + feature.properties.region + ">La region " + feature.properties.region + "</p>";
+		popupContent += "<img src='img/region/"+feature.properties.region+".jpg' style='width:100%;'>";
+		popupContent += "<p>Avec du code: " + feature.properties.code + "</p>";
+		
+		layer.on({
+			mouseover: highlightFeature,
+			mouseout: resetHighlight,
+			// click: zoomToFeature
+		});
+		layer.bindPopup(popupContent);
+	}
+	
+	geojson = L.geoJSON(region, {
+		style : {
+			weight: 2,
+			color: 'white',
+			dashArray: '',
+			fillOpacity: 0.7,
+			fillColor:"green"
+		},
+		onEachFeature: onEachFeature
+	}).addTo(map);
+	map.fitBounds(geojson.getBounds());
+
+	var pollution = L.layerGroup();
+	for (var i = 0; i < region.features.length; i++) {
+		for (var c = 0; c < region.features[i].properties.city.length; c++) {
+			$.ajax({
+				type:"get",
+		        url:"https://api.waqi.info/feed/"+region.features[i].properties.city[c]+"/?token=ced7ba244d657c14ba467ceb9c89f17599a1cc76",
+		        dataType: "json",
+		        success: function(e){
+		        	if(e.status == "ok"){
+			        	var val = (e.data.aqi >= 0 ? e.data.aqi : "Non communiqué");
+			        	var mark1 = L.marker(e.data.city.geo,{icon:poluIcon(e.data.aqi)})
+			        	.bindPopup("<p>La ville " + e.data.city.name + "</p><p>La pollution: " + val + "</p><p><b>"+getText(e.data.aqi) + "</b></p>");
+			        	mark1.addTo(pollution);
+			        }
+				}
+		    });
+		};
+		if(i == region.features.length -1){
+		    ff();
+		}
+	};
+	function ff(){
+		pollution.addTo(map);
+		L.control.layers(baseLayers,{
+			"<span style='color:orange;'>Pollution</span>": pollution
+		}).addTo(map);
+	}
+	
+
+	var legend = L.control({position: 'bottomleft'});
+
+	legend.onAdd = function (map) {
+
+		var div = L.DomUtil.create('div', 'info legend'),
+			grades = [[0, 50], [51, 150], [151, 200],[201,300], [301],["NC"]],
+			labels = "",
+			from, to;
+
+		for (var i = 0; i < grades.length; i++) {
+			for (var t = 0; t < 1; t++) {
+			
+			from = grades[i][t];
+			to = grades[i][t + 1];
+
+			labels +=
+				'<i style="background:' + getColor(from) + '"></i> ' +
+				from + (to ? '-' + to : (from == "NC" ? "" : '+')) +" "+ getRoleText(from)+"<br>";
+			}
+		}
+
+		div.innerHTML = labels;
+		return div;
+	};
+
+	legend.addTo(map);
+	
+	
+</script>
+
+
+
+</body>
+</html>
