@@ -139,7 +139,6 @@
 	function onEachFeature(feature, layer){
 		var popupContent = "<p class=" + feature.properties.region + ">La region " + feature.properties.region + "</p>";
 		popupContent += "<img src='img/region/"+feature.properties.region+".jpg' style='width:100%;'>";
-		popupContent += "<p>Avec du code: " + feature.properties.code + "</p>";
 		
 		layer.on({
 			mouseover: highlightFeature,
